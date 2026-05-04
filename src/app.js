@@ -1,6 +1,6 @@
-import { buildAnnualAnalysis } from "./calculations.js";
-import { demoAnalysis, demoCompany } from "./demo-data.js";
-import { filingUrl, latestAnnualFilings, SecClient } from "./sec-client.js";
+import { buildAnnualAnalysis } from "./calculations.js?v=3";
+import { demoAnalysis, demoCompany } from "./demo-data.js?v=3";
+import { filingUrl, latestAnnualFilingsFromRecordSets, SecClient } from "./sec-client.js?v=3";
 
 const state = {
   companies: [],
@@ -147,7 +147,7 @@ async function selectCompany(company) {
       state.client.submissions(company.cik),
       state.client.companyFacts(company.cik)
     ]);
-    const filings = latestAnnualFilings(submissions, 4);
+    const filings = await loadAnnualFilings(company.cik, submissions, 4);
     const displayFilings = filings.slice(0, 3);
     if (displayFilings.length < 3) {
       throw new Error("Fewer than 3 annual filings were available in SEC submissions.");
@@ -159,6 +159,19 @@ async function selectCompany(company) {
     setStatus(`Unable to complete live analysis. ${error.message}`);
     elements.analyzer.innerHTML = errorMarkup(company, error);
   }
+}
+
+async function loadAnnualFilings(cik, submissions, count) {
+  const recordSets = [submissions?.filings?.recent || {}];
+  let filings = latestAnnualFilingsFromRecordSets(recordSets, count);
+  for (const file of submissions?.filings?.files || []) {
+    if (filings.length >= count) break;
+    setStatus(`Fetching older annual filing index ${file.filingFrom} to ${file.filingTo}...`);
+    const archivedRecords = await state.client.submissionFile(file.name);
+    recordSets.push(archivedRecords);
+    filings = latestAnnualFilingsFromRecordSets(recordSets, count);
+  }
+  return filings;
 }
 
 function renderAnalyzer(company, analysis, options = {}) {

@@ -3,7 +3,12 @@ const PURE = ["pure"];
 const SHARES = ["shares"];
 
 export const TAGS = {
-  revenue: ["RevenueFromContractWithCustomerExcludingAssessedTax", "Revenues", "SalesRevenueNet"],
+  revenue: [
+    "RevenueFromContractWithCustomerExcludingAssessedTax",
+    "Revenues",
+    "SalesRevenueNet",
+    "RevenuesNetOfInterestExpense"
+  ],
   netIncome: ["NetIncomeLoss", "ProfitLoss"],
   assets: ["Assets"],
   equity: ["StockholdersEquity", "StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest"],

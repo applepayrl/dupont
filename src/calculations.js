@@ -1,5 +1,5 @@
-import { averageFact, factValue, safeDivide, sumFacts, TAGS } from "./fact-selectors.js";
-import { formatMoney, formatMultiple, formatPercent } from "./format.js";
+import { averageFact, factValue, safeDivide, sumFacts, TAGS } from "./fact-selectors.js?v=3";
+import { formatMoney, formatMultiple, formatPercent } from "./format.js?v=3";
 
 export function buildAnnualAnalysis(companyFacts, filings) {
   return filings.map((filing, index) => {

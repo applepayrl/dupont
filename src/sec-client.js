@@ -1,4 +1,4 @@
-import { accessionNoDashes } from "./format.js";
+import { accessionNoDashes } from "./format.js?v=3";
 
 const SEC_ORIGIN = "https://www.sec.gov";
 const SEC_DATA_ORIGIN = "https://data.sec.gov";
@@ -38,6 +38,10 @@ export class SecClient {
     return this.fetchJson(`${SEC_DATA_ORIGIN}/submissions/CIK${cik}.json`);
   }
 
+  async submissionFile(fileName) {
+    return this.fetchJson(`${SEC_DATA_ORIGIN}/submissions/${fileName}`);
+  }
+
   async companyFacts(cik) {
     return this.fetchJson(`${SEC_DATA_ORIGIN}/api/xbrl/companyfacts/CIK${cik}.json`);
   }
@@ -54,24 +58,30 @@ function proxyDefault() {
 
 export function latestAnnualFilings(submissions, count = 3) {
   const recent = submissions?.filings?.recent || {};
+  return latestAnnualFilingsFromRecordSets([recent], count);
+}
+
+export function latestAnnualFilingsFromRecordSets(recordSets, count = 3) {
   const filings = [];
-  const forms = recent.form || [];
-  for (let index = 0; index < forms.length; index += 1) {
-    if (!["10-K", "10-K/A"].includes(forms[index])) continue;
-    const accession = recent.accessionNumber?.[index];
-    const fiscalYear = recent.reportDate?.[index]?.slice(0, 4) || recent.filingDate?.[index]?.slice(0, 4);
-    if (!accession || !fiscalYear) continue;
-    if (filings.some((filing) => filing.fiscalYear === fiscalYear)) continue;
-    filings.push({
-      accession,
-      accessionCompact: accessionNoDashes(accession),
-      form: forms[index],
-      fiscalYear,
-      reportDate: recent.reportDate?.[index],
-      filingDate: recent.filingDate?.[index],
-      primaryDocument: recent.primaryDocument?.[index]
-    });
-    if (filings.length === count) break;
+  for (const records of recordSets) {
+    const forms = records?.form || [];
+    for (let index = 0; index < forms.length; index += 1) {
+      if (!["10-K", "10-K/A"].includes(forms[index])) continue;
+      const accession = records.accessionNumber?.[index];
+      const fiscalYear = records.reportDate?.[index]?.slice(0, 4) || records.filingDate?.[index]?.slice(0, 4);
+      if (!accession || !fiscalYear) continue;
+      if (filings.some((filing) => filing.fiscalYear === fiscalYear || filing.accession === accession)) continue;
+      filings.push({
+        accession,
+        accessionCompact: accessionNoDashes(accession),
+        form: forms[index],
+        fiscalYear,
+        reportDate: records.reportDate?.[index],
+        filingDate: records.filingDate?.[index],
+        primaryDocument: records.primaryDocument?.[index]
+      });
+      if (filings.length === count) return filings;
+    }
   }
   return filings;
 }
